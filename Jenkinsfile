@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         DOCKERHUB_CREDENTIALS = credentials('dockerhub-cred-id')
-        GIT_CREDENTIALS = credentials('github-cred-id')
+        GIT_CREDENTIALS = 'github-cred-id'   // just store the ID string here
         KUBECONFIG = '/home/ubuntu/.kube/config'
         IMAGE_NAME = 'vishnukrajan007/myapp'
         IMAGE_TAG = 'latest'
@@ -16,7 +16,7 @@ pipeline {
                 git(
                     url: 'https://github.com/vishnukrajan007/mass-app.git',
                     branch: 'main',
-                    credentialsId: "${env.GIT_CREDENTIALS}"
+                    credentialsId: "${GIT_CREDENTIALS}"
                 )
             }
         }
@@ -29,25 +29,19 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
-                sh """
-                    docker build -t ${IMAGE_NAME}:${IMAGE_TAG} .
-                """
+                sh "docker build -t ${IMAGE_NAME}:${IMAGE_TAG} ."
             }
         }
 
         stage('Docker Login') {
             steps {
-                sh """
-                    echo "${DOCKERHUB_CREDENTIALS_PSW}" | docker login -u "${DOCKERHUB_CREDENTIALS_USR}" --password-stdin
-                """
+                sh "echo ${DOCKERHUB_CREDENTIALS_PSW} | docker login -u ${DOCKERHUB_CREDENTIALS_USR} --password-stdin"
             }
         }
 
         stage('Push Docker Image') {
             steps {
-                sh """
-                    docker push ${IMAGE_NAME}:${IMAGE_TAG}
-                """
+                sh "docker push ${IMAGE_NAME}:${IMAGE_TAG}"
             }
         }
 
@@ -64,9 +58,7 @@ pipeline {
     post {
         always {
             echo 'Cleaning up...'
-            node {
-                sh 'docker logout'
-            }
+            sh 'docker logout'
         }
         success {
             echo 'Deployment successful!'
