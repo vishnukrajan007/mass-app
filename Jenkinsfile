@@ -68,9 +68,7 @@ pipeline {
     post {
         always {
             echo 'Cleaning up...'
-            node {
-                sh 'docker logout'
-            }
+            sh 'docker logout'
         }
         success {
             echo 'Deployment successful!'
