@@ -2,9 +2,9 @@ pipeline {
     agent any
 
     environment {
-        DOCKERHUB_CREDENTIALS = credentials('dockerhub-cred-id')    // DockerHub username/password stored in Jenkins
-        GIT_CREDENTIALS = credentials('github-cred-id')             // GitHub username/token stored in Jenkins
-        KUBECONFIG = '/home/ubuntu/.kube/config'                     // Path to kubeconfig on Jenkins EC2
+        DOCKERHUB_CREDENTIALS = credentials('dockerhub-cred-id')
+        GIT_CREDENTIALS = credentials('github-cred-id')
+        KUBECONFIG = '/home/ubuntu/.kube/config'
         IMAGE_NAME = 'vishnukrajan007/myapp'
         IMAGE_TAG = 'latest'
     }
@@ -38,7 +38,7 @@ pipeline {
         stage('Docker Login') {
             steps {
                 sh """
-                echo "${DOCKERHUB_CREDENTIALS_PSW}" | docker login -u "${DOCKERHUB_CREDENTIALS_USR}" --password-stdin
+                    echo "${DOCKERHUB_CREDENTIALS_PSW}" | docker login -u "${DOCKERHUB_CREDENTIALS_USR}" --password-stdin
                 """
             }
         }
@@ -55,5 +55,25 @@ pipeline {
             steps {
                 sh """
                     export KUBECONFIG=${KUBECONFIG}
-                    kubectl set image
+                    kubectl set image deployment/massapp-deployment massapp-container=${IMAGE_NAME}:${IMAGE_TAG} --record
+                """
+            }
+        }
+    }
+
+    post {
+        always {
+            echo 'Cleaning up...'
+            node {
+                sh 'docker logout'
+            }
+        }
+        success {
+            echo 'Deployment successful!'
+        }
+        failure {
+            echo 'Deployment failed!'
+        }
+    }
+}
 
