@@ -1,26 +1,19 @@
 pipeline {
     agent any
 
-    tools {
-        maven 'Maven3'
+    environment {
+        IMAGE_TAG = 'vishnukrajan007/myapp:latest'   // Your DockerHub image
+        KUBECONFIG = '/home/ubuntu/.kube/config'     // Jenkins EC2 kubeconfig path
     }
 
     stages {
-        stage('Clone Code') {
+        stage('Deploy to EKS') {
             steps {
-                git 'https://github.com/vishnukrajan007/mass-app.git'
-            }
-        }
-
-        stage('Build') {
-            steps {
-                sh 'mvn clean package'
-            }
-        }
-
-        stage('Archive Artifact') {
-            steps {
-                archiveArtifacts artifacts: 'target/*.war', fingerprint: true
+                sh '''
+                echo "Deploying image ${IMAGE_TAG} to EKS..."
+                export KUBECONFIG=${KUBECONFIG}
+                kubectl set image deployment/massapp-deployment massapp-container=${IMAGE_TAG} --record
+                '''
             }
         }
     }
