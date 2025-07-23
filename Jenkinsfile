@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         DOCKERHUB_CREDENTIALS = credentials('dockerhub-cred-id')
-        GIT_CREDENTIALS = 'Github'
+        GIT_CREDENTIALS = credentials('Github')
         KUBECONFIG = '/home/ubuntu/.kube/config'
         IMAGE_NAME = 'vishnukrajan007/myapp'
         IMAGE_TAG = 'latest'
@@ -15,7 +15,7 @@ pipeline {
                 git(
                     url: 'https://github.com/vishnukrajan007/mass-app.git',
                     branch: 'main',
-                    credentialsId: GIT_CREDENTIALS
+                    credentialsId: "${GIT_CREDENTIALS}"
                 )
             }
         }
@@ -30,9 +30,9 @@ pipeline {
 
         stage('Docker Login') {
             steps {
-                sh '''
-                    echo "${DOCKERHUB_CREDENTIALS_PSW}" | docker login -u "${DOCKERHUB_CREDENTIALS_USR}" --password-stdin
-                '''
+                sh """
+                echo "${DOCKERHUB_CREDENTIALS_PSW}" | docker login -u "${DOCKERHUB_CREDENTIALS_USR}" --password-stdin
+                """
             }
         }
 
@@ -45,8 +45,8 @@ pipeline {
         stage('Deploy to EKS') {
             steps {
                 sh """
-                    export KUBECONFIG=${KUBECONFIG}
-                    kubectl set image deployment/massapp-deployment massapp-container=${IMAGE_NAME}:${IMAGE_TAG} --record
+                export KUBECONFIG=${KUBECONFIG}
+                kubectl set image deployment/massapp-deployment massapp-container=${IMAGE_NAME}:${IMAGE_TAG} --record
                 """
             }
         }
@@ -54,8 +54,14 @@ pipeline {
 
     post {
         always {
-            echo 'Cleaning up...'
             sh 'docker logout'
         }
-        success
+        success {
+            echo '✅ Deployment successful!'
+        }
+        failure {
+            echo '❌ Deployment failed!'
+        }
+    }
+}
 
