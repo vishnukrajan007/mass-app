@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         DOCKERHUB_CREDENTIALS = credentials('dockerhub-cred-id')
-        GIT_CREDENTIALS = 'github-cred-id'   // just store the ID string here
+        GIT_CREDENTIALS = credentials('Github')               // Use exact Jenkins credential ID for GitHub
         KUBECONFIG = '/home/ubuntu/.kube/config'
         IMAGE_NAME = 'vishnukrajan007/myapp'
         IMAGE_TAG = 'latest'
@@ -23,25 +23,35 @@ pipeline {
 
         stage('Build with Maven') {
             steps {
-                sh 'mvn clean package'
+                dir('myapp') {                                  // Change directory to where pom.xml exists
+                    sh 'mvn clean package'
+                }
             }
         }
 
         stage('Build Docker Image') {
             steps {
-                sh "docker build -t ${IMAGE_NAME}:${IMAGE_TAG} ."
+                dir('myapp') {                                  // Build Docker image from myapp directory
+                    sh """
+                        docker build -t ${IMAGE_NAME}:${IMAGE_TAG} .
+                    """
+                }
             }
         }
 
         stage('Docker Login') {
             steps {
-                sh "echo ${DOCKERHUB_CREDENTIALS_PSW} | docker login -u ${DOCKERHUB_CREDENTIALS_USR} --password-stdin"
+                sh """
+                    echo "${DOCKERHUB_CREDENTIALS_PSW}" | docker login -u "${DOCKERHUB_CREDENTIALS_USR}" --password-stdin
+                """
             }
         }
 
         stage('Push Docker Image') {
             steps {
-                sh "docker push ${IMAGE_NAME}:${IMAGE_TAG}"
+                sh """
+                    docker push ${IMAGE_NAME}:${IMAGE_TAG}
+                """
             }
         }
 
@@ -58,7 +68,9 @@ pipeline {
     post {
         always {
             echo 'Cleaning up...'
-            sh 'docker logout'
+            node {
+                sh 'docker logout'
+            }
         }
         success {
             echo 'Deployment successful!'
