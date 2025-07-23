@@ -55,23 +55,5 @@ pipeline {
             steps {
                 sh """
                     export KUBECONFIG=${KUBECONFIG}
-                    kubectl set image deployment/massapp-deployment massapp-container=${IMAGE_NAME}:${IMAGE_TAG} --record
-                """
-            }
-        }
-    }
-
-    post {
-        always {
-            echo 'Cleaning up...'
-            sh 'docker logout'
-        }
-        success {
-            echo 'Deployment successful!'
-        }
-        failure {
-            echo 'Deployment failed!'
-        }
-    }
-}
+                    kubectl set image
 
